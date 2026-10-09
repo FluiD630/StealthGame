@@ -3,6 +3,9 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
+
+    private UIContoller uiCon;
+
     public InputActionReference moveAction;
     public float moveSpeed;
     public InputActionReference walkAction;
@@ -14,6 +17,15 @@ public class PlayerController : MonoBehaviour
     private float rollCounter;
 
     public InputActionReference aimAction,lookAction;
+
+    public InputActionReference shootAction;
+    public Transform shootPoint;
+    public float range;
+
+    public InputActionReference reloadAction;
+
+    public GameObject shootEffect, impactEffect;
+
 
     public CharacterController charCon;
 
@@ -28,11 +40,17 @@ public class PlayerController : MonoBehaviour
     private Vector2 lastMousePos;
     public GameObject weapon;
 
+    public int currentAmmo, remainingAmmo, clipSize;
+
     public Animator anim;
     void Start()
     {
 
+        uiCon = FindAnyObjectByType<UIContoller>();
+
         activeMoveSpeed = moveSpeed;
+
+        uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
 
     }
 
@@ -72,6 +90,7 @@ public class PlayerController : MonoBehaviour
 
         if (aimAction.action.IsPressed())
         {
+
             moveInput = Vector2.zero;
 
             rollCounter = 0f;
@@ -107,6 +126,38 @@ public class PlayerController : MonoBehaviour
                 model.rotation = Quaternion.LookRotation(aimDir);
             }
 
+
+            if(shootAction.action.WasPressedThisFrame())
+            {
+
+                if (currentAmmo > 0)
+                {
+                
+                 Instantiate(shootEffect, shootEffect.transform.position, shootPoint.transform.rotation).SetActive(true);
+ 
+
+                 anim.SetTrigger("shoot");
+
+                 RaycastHit hit;
+
+                    if(Physics.Raycast(shootPoint.position, shootPoint.forward, out hit, range))
+                    {
+                     Debug.Log("Hit: " + hit.transform.name);
+
+                     Instantiate(impactEffect, hit.point, Quaternion.identity); 
+                    }
+
+                   currentAmmo--;
+
+                    uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
+                }
+                else
+                {
+
+                    //Reload();
+
+                }
+            }
         }
         else
         {
@@ -114,6 +165,12 @@ public class PlayerController : MonoBehaviour
 
             weapon.SetActive(false);
         }
+
+        if (reloadAction.action.WasPressedThisFrame() || currentAmmo == 0 && shootAction.action.IsPressed())
+        {
+            Reload();
+        }
+
 
         if (charCon.isGrounded)
         {
@@ -141,5 +198,25 @@ public class PlayerController : MonoBehaviour
 
 
         lastMousePos = Mouse.current.position.value;
+    }
+
+    void Reload()
+    {
+        int refileAmount = clipSize - currentAmmo;
+
+        if (remainingAmmo >= refileAmount)
+        {
+            remainingAmmo -= refileAmount;
+        }
+
+        else
+        {
+            refileAmount = remainingAmmo;
+            remainingAmmo = 0;
+        }
+
+        currentAmmo += refileAmount;
+
+        uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
     }
 }
