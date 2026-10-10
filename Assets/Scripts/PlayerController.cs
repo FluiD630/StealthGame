@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.DualShock.LowLevel;
 
 public class PlayerController : MonoBehaviour
 {
@@ -22,6 +23,8 @@ public class PlayerController : MonoBehaviour
     public Transform shootPoint;
     public float range;
 
+    public LayerMask whatCanBeShot;
+
     public InputActionReference reloadAction;
 
     public GameObject shootEffect, impactEffect;
@@ -41,6 +44,8 @@ public class PlayerController : MonoBehaviour
     public GameObject weapon;
 
     public int currentAmmo, remainingAmmo, clipSize;
+
+    public GameObject EnemyDamageEffect;
 
     public Animator anim;
     void Start()
@@ -140,14 +145,50 @@ public class PlayerController : MonoBehaviour
 
                  RaycastHit hit;
 
-                    if(Physics.Raycast(shootPoint.position, shootPoint.forward, out hit, range))
+                    if(Physics.Raycast(shootPoint.position, shootPoint.forward, out hit, range, whatCanBeShot))
                     {
-                     Debug.Log("Hit: " + hit.transform.name);
+                        /*
+                         Debug.Log("Hit: " + hit.transform.name);
 
-                     Instantiate(impactEffect, hit.point, Quaternion.identity); 
+                         Instantiate(impactEffect, hit.point, Quaternion.identity); 
+
+
+                            if (hit.transform.tag == "Shootable")
+                            {
+                                hit.transform.GetComponent<ShootableObjectScript>().DestroyObject();
+                            }
+                            if (hit.transform.tag == "Enemy")
+                            {
+                                hit.transform.GetComponent<EnemyController>().TakeDamage();
+                            }*/
+
+
+                        switch (hit.transform.tag)
+                        {
+                            case "Shootable":
+
+                                hit.transform.GetComponent<ShootableObjectScript>().DestroyObject();
+
+                                break;
+
+                            case "Enemy":
+
+                                hit.transform.GetComponent<EnemyController>().TakeDamage();
+
+                                Instantiate(EnemyDamageEffect, hit.point, EnemyDamageEffect.transform.rotation);
+
+                                break;
+
+                            default:
+
+                                Instantiate(impactEffect, hit.point, Quaternion.identity);
+
+                                break;
+
+                        }
                     }
 
-                   currentAmmo--;
+                    currentAmmo--;
 
                     uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
                 }
@@ -219,4 +260,12 @@ public class PlayerController : MonoBehaviour
 
         uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
     }
+
+    public void GetAmmo(int ammoToAdd)
+    {
+        remainingAmmo += ammoToAdd;
+
+        uiCon.UpdateAmmoText(currentAmmo, remainingAmmo);
+    }
+
 }
