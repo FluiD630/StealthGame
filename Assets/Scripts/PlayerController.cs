@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour
 
     public GameObject shootEffect, impactEffect;
 
-
     public CharacterController charCon;
 
     public Transform model;
